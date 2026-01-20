@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Cleaning Plan</title>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f7;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .week-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    button {
+      padding: 6px 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+
+    .day-row {
+      margin-bottom: 18px;
+    }
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    label.day {
+      font-weight: 600;
+    }
+
+    .complete {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    select {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Weekly Cleaning Plan</h1>
+
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)">◀</button>
+      <div id="weekLabel"></div>
+      <button onclick="changeWeek(1)">▶</button>
+    </div>
+
+    <div id="days"></div>
+  </div>
+
+<script>
+  const tasks = [
+    "Bathrooms – Toilets, Sinks, Mirror",
+    "Bathrooms – Shower",
+    "Kitchens – Dishes/Sink",
+    "Kitchens – Clean countertops",
+    "Kitchens – Declutter",
+    "Upstairs – Declutter",
+    "Upstairs – Dust",
+    "Upstairs – Vacuum/Mop",
+    "Main floor – Declutter",
+    "Main floor – Dust",
+    "Main floor – Vacuum/Mop",
+    "Main floor – Windows",
+    "Basement – Declutter",
+    "Basement – Dust",
+    "Basement – Vacuum/Mop",
+    "Other – Laundry",
+    "Other – Empty trash cans/Diaper pails"
+  ];
+
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Weekend"];
+  let weekOffset = 0;
+
+  function getWeekStart(offset = 0) {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(now.setDate(diff + offset * 7));
+    monday.setHours(0,0,0,0);
+    return monday;
+  }
+
+  function formatDate(date) {
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+
+  function loadWeek() {
+    const monday = getWeekStart(weekOffset);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const weekKey = monday.toISOString().slice(0,10);
+    document.getElementById("weekLabel").textContent =
+      `${formatDate(monday)} – ${formatDate(sunday)}`;
+
+    const saved = JSON.parse(localStorage.getItem(weekKey)) || {};
+    const container = document.getElementById("days");
+    container.innerHTML = "";
+
+    days.forEach(day => {
+      const row = document.createElement("div");
+      row.className = "day-row";
+
+      row.innerHTML = `
+        <div class="day-header">
+          <label class="day">${day}</label>
+          <label class="complete">
+            <input type="checkbox" ${saved[day]?.done ? "checked" : ""} />
+            Complete
+          </label>
+        </div>
+        <select>
+          <option value="">Select task</option>
+          ${tasks.map(t => `<option ${saved[day]?.task === t ? "selected" : ""}>${t}</option>`).join("")}
+        </select>
+      `;
+
+      const checkbox = row.querySelector("input");
+      const select = row.querySelector("select");
+
+      checkbox.onchange = select.onchange = () => {
+        saved[day] = {
+          task: select.value,
+          done: checkbox.checked
+        };
+        localStorage.setItem(weekKey, JSON.stringify(saved));
+      };
+
+      container.appendChild(row);
+    });
+  }
+
+  function changeWeek(direction) {
+    weekOffset += direction;
+    loadWeek();
+  }
+
+  loadWeek();
+</script>
+</body>
+</html>
