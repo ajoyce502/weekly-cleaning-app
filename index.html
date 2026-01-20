@@ -24,14 +24,14 @@
     h1 {
       text-align: center;
       font-size: 20px;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
 
     .week-nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       font-weight: 600;
     }
 
@@ -41,6 +41,31 @@
       border-radius: 10px;
       border: 1px solid #ccc;
       background: #fff;
+    }
+
+    .progress-container {
+      margin-bottom: 20px;
+    }
+
+    .progress-label {
+      font-size: 14px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #e5e5ea;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #34c759;
+      transition: width 0.3s ease;
     }
 
     .day-row {
@@ -90,6 +115,13 @@
       <button onclick="changeWeek(1)">▶</button>
     </div>
 
+    <div class="progress-container">
+      <div class="progress-label" id="progressText"></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+
     <div id="days"></div>
   </div>
 
@@ -116,6 +148,7 @@
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Weekend"];
   let weekOffset = 0;
+  let currentWeekKey = "";
 
   function getWeekStart(offset = 0) {
     const now = new Date();
@@ -130,16 +163,25 @@
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
+  function updateProgress(saved) {
+    const completed = days.filter(d => saved[d]?.done).length;
+    const percent = Math.round((completed / days.length) * 100);
+
+    document.getElementById("progressBar").style.width = percent + "%";
+    document.getElementById("progressText").textContent =
+      `${completed} of ${days.length} completed (${percent}%)`;
+  }
+
   function loadWeek() {
     const monday = getWeekStart(weekOffset);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
-    const weekKey = monday.toISOString().slice(0,10);
+    currentWeekKey = monday.toISOString().slice(0,10);
     document.getElementById("weekLabel").textContent =
       `${formatDate(monday)} – ${formatDate(sunday)}`;
 
-    const saved = JSON.parse(localStorage.getItem(weekKey)) || {};
+    const saved = JSON.parse(localStorage.getItem(currentWeekKey)) || {};
     const container = document.getElementById("days");
     container.innerHTML = "";
 
@@ -169,11 +211,14 @@
           task: select.value,
           done: checkbox.checked
         };
-        localStorage.setItem(weekKey, JSON.stringify(saved));
+        localStorage.setItem(currentWeekKey, JSON.stringify(saved));
+        updateProgress(saved);
       };
 
       container.appendChild(row);
     });
+
+    updateProgress(saved);
   }
 
   function changeWeek(direction) {
